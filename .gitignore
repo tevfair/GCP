@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Terraform working directories
+**/.terraform/*
+
+# Terraform state (may contain sensitive data)
+*.tfstate
+*.tfstate.*
+
+# Terraform variable values (may contain sensitive data)
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Terraform crash and override files
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI configuration
+.terraformrc
+terraform.rc
+
+# Policy result artifacts
+policy-results.txt
