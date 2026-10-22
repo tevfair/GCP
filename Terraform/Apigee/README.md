@@ -184,18 +184,18 @@ Afterward, verify in Google Cloud that the environment and other billable resour
 
 ## Policy as code with OPA and Regula
 
-The `policy/` directory contains plan-based Rego controls:
+The central `../OPA Policies/Apigee/` service directory contains the plan-based Rego controls associated with this Terraform configuration:
 
-- `policy/apigee_security.rego` — security policy evaluated against Terraform plan JSON
-- `policy/apigee_security_test.rego` — positive and negative unit tests for every control
+- `../OPA Policies/Apigee/apigee_security.rego` — security policy evaluated against Terraform plan JSON
+- `../OPA Policies/Apigee/apigee_security_test.rego` — positive and negative unit tests for every control
 
 The policy checks the rendered plan rather than raw HCL, so Terraform expressions, defaults, and variables are evaluated before enforcement. It also inspects `resource_changes`, including resources addressed within child modules.
 
 Run the unit tests with OPA 0.68 or later:
 
 ```shell terminal
-opa fmt --fail policy
-opa test policy -v
+opa fmt --fail "../OPA Policies/Apigee"
+opa test "../OPA Policies/Apigee" -v
 ```
 
 Create a plan JSON document and evaluate it:
@@ -206,7 +206,7 @@ terraform show -json tfplan > tfplan.json
 opa eval \
   --fail-defined \
   --format pretty \
-  --data policy/apigee_security.rego \
+  --data "../OPA Policies/Apigee/apigee_security.rego" \
   --input tfplan.json \
   'data.apigee.security.deny[_]'
 ```
@@ -240,8 +240,8 @@ Do not commit `tfplan` or `tfplan.json`; Terraform plans may contain sensitive v
 - `providers.tf` — Terraform version, Google provider, impersonation, and default labels
 - `variables.tf` — configurable inputs and validation rules
 - `main.tf` — APIs and Apigee resources
-- `policy/apigee_security.rego` — OPA security controls for Terraform plan JSON
-- `policy/apigee_security_test.rego` — OPA unit tests
+- `../OPA Policies/Apigee/apigee_security.rego` — centralized OPA security controls for Terraform plan JSON
+- `../OPA Policies/Apigee/apigee_security_test.rego` — centralized OPA unit tests
 - `.terraform.lock.hcl` — selected provider versions and checksums
 
 ## Production considerations
