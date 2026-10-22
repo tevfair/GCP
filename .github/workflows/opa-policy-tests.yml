@@ -1,0 +1,144 @@
+name: OPA policy tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Terraform/**"
+      - ".github/workflows/opa-policy-tests.yml"
+  pull_request:
+    paths:
+      - "Terraform/**"
+      - ".github/workflows/opa-policy-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: opa-policy-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPA_VERSION: "0.68.0"
+  POLICY_DIR: "Terraform/OPA Policies"
+
+jobs:
+  test:
+    name: Validate and test OPA policies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install OPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          asset="opa_linux_amd64_static"
+          release_url="https://github.com/open-policy-agent/opa/releases/download/v${OPA_VERSION}"
+
+          curl --fail --location --silent --show-error \
+            "${release_url}/${asset}" --output opa
+          curl --fail --location --silent --show-error \
+            "${release_url}/${asset}.sha256" --output opa.sha256
+
+          sed -i "s#${asset}#opa#" opa.sha256
+          sha256sum --check opa.sha256
+          chmod +x opa
+          sudo install opa /usr/local/bin/opa
+          opa version
+
+      - name: Run OPA validation and tests
+        id: opa
+        shell: bash
+        run: |
+          set +e
+
+          opa fmt --fail "$POLICY_DIR" > format-results.txt 2>&1
+          format_status=$?
+
+          opa check --strict "$POLICY_DIR" > check-results.txt 2>&1
+          check_status=$?
+
+          opa test "$POLICY_DIR" --verbose > test-results.txt 2>&1
+          test_status=$?
+
+          {
+            echo "OPA version: ${OPA_VERSION}"
+            echo
+            echo "=== Formatting ==="
+            cat format-results.txt
+            echo "Exit code: ${format_status}"
+            echo
+            echo "=== Strict validation ==="
+            cat check-results.txt
+            echo "Exit code: ${check_status}"
+            echo
+            echo "=== Unit tests ==="
+            cat test-results.txt
+            echo "Exit code: ${test_status}"
+          } | tee opa-results.txt
+
+          echo "format_status=${format_status}" >> "$GITHUB_OUTPUT"
+          echo "check_status=${check_status}" >> "$GITHUB_OUTPUT"
+          echo "test_status=${test_status}" >> "$GITHUB_OUTPUT"
+
+      - name: Display results in job summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## OPA policy test results"
+            echo
+            echo "| Check | Result |"
+            echo "|---|---|"
+            if [[ "${{ steps.opa.outputs.format_status }}" == "0" ]]; then
+              echo "| Rego formatting | Passed |"
+            else
+              echo "| Rego formatting | Failed |"
+            fi
+            if [[ "${{ steps.opa.outputs.check_status }}" == "0" ]]; then
+              echo "| Strict validation | Passed |"
+            else
+              echo "| Strict validation | Failed |"
+            fi
+            if [[ "${{ steps.opa.outputs.test_status }}" == "0" ]]; then
+              echo "| Unit tests | Passed |"
+            else
+              echo "| Unit tests | Failed |"
+            fi
+            echo
+            echo "<details><summary>Complete output</summary>"
+            echo
+            echo '```text'
+            cat opa-results.txt
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload complete results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opa-policy-results
+          path: |
+            opa-results.txt
+            format-results.txt
+            check-results.txt
+            test-results.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail workflow when a check fails
+        if: >-
+          steps.opa.outputs.format_status != '0' ||
+          steps.opa.outputs.check_status != '0' ||
+          steps.opa.outputs.test_status != '0'
+        shell: bash
+        run: |
+          echo "::error title=OPA policy checks failed::Review the job summary and uploaded results."
+          exit 1
