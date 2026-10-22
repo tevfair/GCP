@@ -6,10 +6,12 @@ on:
       - main
     paths:
       - "Terraform/**"
+      - ".github/scripts/opa_control_report.py"
       - ".github/workflows/opa-policy-tests.yml"
   pull_request:
     paths:
       - "Terraform/**"
+      - ".github/scripts/opa_control_report.py"
       - ".github/workflows/opa-policy-tests.yml"
   workflow_dispatch:
 
@@ -87,6 +89,17 @@ jobs:
           echo "check_status=${check_status}" >> "$GITHUB_OUTPUT"
           echo "test_status=${test_status}" >> "$GITHUB_OUTPUT"
 
+      - name: Build control evidence report
+        id: evidence
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          python3 .github/scripts/opa_control_report.py
+          evidence_status=$?
+          echo "status=${evidence_status}" >> "$GITHUB_OUTPUT"
+          exit 0
+
       - name: Display results in job summary
         if: always()
         shell: bash
@@ -112,7 +125,9 @@ jobs:
               echo "| Unit tests | Failed |"
             fi
             echo
-            echo "<details><summary>Complete output</summary>"
+            cat control-evidence.md
+            echo
+            echo "<details><summary>Complete OPA output</summary>"
             echo
             echo '```text'
             cat opa-results.txt
@@ -130,6 +145,7 @@ jobs:
             format-results.txt
             check-results.txt
             test-results.txt
+            control-evidence.md
           if-no-files-found: error
           retention-days: 14
 
@@ -137,7 +153,8 @@ jobs:
         if: >-
           steps.opa.outputs.format_status != '0' ||
           steps.opa.outputs.check_status != '0' ||
-          steps.opa.outputs.test_status != '0'
+          steps.opa.outputs.test_status != '0' ||
+          steps.evidence.outputs.status != '0'
         shell: bash
         run: |
           echo "::error title=OPA policy checks failed::Review the job summary and uploaded results."

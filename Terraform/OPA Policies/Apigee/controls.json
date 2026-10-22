@@ -1,0 +1,67 @@
+[
+  {
+    "id": "APIGEE-001",
+    "requirement": "Exactly one organization, instance, environment, and attachment must exist.",
+    "test": "test_empty_plan_is_rejected"
+  },
+  {
+    "id": "APIGEE-002",
+    "requirement": "Required Google APIs must be present and retained during destroy.",
+    "test": "test_required_api_must_remain_enabled"
+  },
+  {
+    "id": "APIGEE-003",
+    "requirement": "The Apigee organization must use the cloud runtime.",
+    "test": "test_runtime_must_be_cloud"
+  },
+  {
+    "id": "APIGEE-004",
+    "requirement": "The Apigee organization must use an explicit authorized VPC.",
+    "test": "test_authorized_network_is_required"
+  },
+  {
+    "id": "APIGEE-005",
+    "requirement": "Configured CMEK values must be full Cloud KMS CryptoKey resource names.",
+    "test": "test_invalid_kms_key_is_rejected"
+  },
+  {
+    "id": "APIGEE-006",
+    "requirement": "Runtime networking must use private RFC1918 /22 address space.",
+    "test": "test_public_instance_range_is_rejected"
+  },
+  {
+    "id": "APIGEE-007",
+    "requirement": "The Private Service Connect consumer allowlist must not be empty.",
+    "test": "test_empty_psc_allowlist_is_rejected"
+  },
+  {
+    "id": "APIGEE-008",
+    "requirement": "Runtime access logging must be enabled.",
+    "test": "test_disabled_access_logging_is_rejected"
+  },
+  {
+    "id": "APIGEE-009",
+    "requirement": "The Apigee environment tier must be explicit and supported.",
+    "test": "test_environment_type_must_be_explicit"
+  },
+  {
+    "id": "APIGEE-010",
+    "requirement": "The API proxy type must be explicit and supported.",
+    "test": "test_proxy_type_must_be_explicit"
+  },
+  {
+    "id": "APIGEE-011",
+    "requirement": "The deployment type must be explicit and supported.",
+    "test": "test_deployment_type_must_be_explicit"
+  },
+  {
+    "id": "APIGEE-012",
+    "requirement": "A configured forward proxy must use HTTPS and an explicit port.",
+    "test": "test_insecure_forward_proxy_is_rejected"
+  },
+  {
+    "id": "APIGEE-013",
+    "requirement": "Client-IP resolution must use a trusted, nonzero X-Forwarded-For index.",
+    "test": "test_untrusted_client_ip_index_is_rejected"
+  }
+]
