@@ -1,5 +1,6 @@
-# macOS
+# Local filesystem and sync metadata
 .DS_Store
+*.rslsc
 
 # Terraform working directories
 **/.terraform/*
