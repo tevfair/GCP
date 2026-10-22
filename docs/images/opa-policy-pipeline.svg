@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title description">
+  <title id="title">OPA policy testing pipeline</title>
+  <desc id="description">GitHub events trigger checkout, OPA installation, policy validation, unit testing, evidence reporting, job summary publication, artifact upload, and a final quality gate.</desc>
+  <defs>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1f6feb"/>
+      <stop offset="1" stop-color="#8250df"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#57606a"/>
+    </marker>
+    <style>
+      .title { font: 700 25px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; }
+      .subtitle { font: 400 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #dbeafe; }
+      .box-title { font: 700 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #24292f; }
+      .box-text { font: 400 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #57606a; }
+      .number { font: 700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #fff; text-anchor: middle; dominant-baseline: middle; }
+      .arrow { stroke: #57606a; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .box { fill: #f6f8fa; stroke: #afb8c1; stroke-width: 1.5; rx: 10; }
+      .success { fill: #dafbe1; stroke: #1a7f37; stroke-width: 1.5; rx: 10; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="390" rx="14" fill="#fff" stroke="#d0d7de"/>
+  <path d="M14 0 H1186 Q1200 0 1200 14 V88 H0 V14 Q0 0 14 0 Z" fill="url(#header)"/>
+  <text x="36" y="39" class="title">GCP OPA Policy Testing Pipeline</text>
+  <text x="36" y="66" class="subtitle">Automated validation and control evidence for API Hub and Apigee</text>
+
+  <rect x="28" y="125" width="160" height="92" class="box"/>
+  <circle cx="50" cy="147" r="14" fill="#1f6feb"/><text x="50" y="147" class="number">1</text>
+  <text x="70" y="151" class="box-title">Trigger</text>
+  <text x="44" y="177" class="box-text">Push to main</text>
+  <text x="44" y="195" class="box-text">Pull request / manual</text>
+
+  <path d="M188 171 H218" class="arrow"/>
+
+  <rect x="220" y="125" width="160" height="92" class="box"/>
+  <circle cx="242" cy="147" r="14" fill="#1f6feb"/><text x="242" y="147" class="number">2</text>
+  <text x="262" y="151" class="box-title">Prepare</text>
+  <text x="236" y="177" class="box-text">Checkout source</text>
+  <text x="236" y="195" class="box-text">Install verified OPA</text>
+
+  <path d="M380 171 H410" class="arrow"/>
+
+  <rect x="412" y="125" width="160" height="92" class="box"/>
+  <circle cx="434" cy="147" r="14" fill="#8250df"/><text x="434" y="147" class="number">3</text>
+  <text x="454" y="151" class="box-title">Validate</text>
+  <text x="428" y="177" class="box-text">Rego formatting</text>
+  <text x="428" y="195" class="box-text">Strict compilation</text>
+
+  <path d="M572 171 H602" class="arrow"/>
+
+  <rect x="604" y="125" width="160" height="92" class="box"/>
+  <circle cx="626" cy="147" r="14" fill="#8250df"/><text x="626" y="147" class="number">4</text>
+  <text x="646" y="151" class="box-title">Test</text>
+  <text x="620" y="177" class="box-text">Run OPA unit tests</text>
+  <text x="620" y="195" class="box-text">API Hub + Apigee</text>
+
+  <path d="M764 171 H794" class="arrow"/>
+
+  <rect x="796" y="125" width="176" height="92" class="box"/>
+  <circle cx="818" cy="147" r="14" fill="#bf8700"/><text x="818" y="147" class="number">5</text>
+  <text x="838" y="151" class="box-title">Build evidence</text>
+  <text x="812" y="177" class="box-text">Map controls to tests</text>
+  <text x="812" y="195" class="box-text">Create source references</text>
+
+  <path d="M972 171 H1002" class="arrow"/>
+
+  <rect x="1004" y="125" width="168" height="92" class="success"/>
+  <circle cx="1026" cy="147" r="14" fill="#1a7f37"/><text x="1026" y="147" class="number">6</text>
+  <text x="1046" y="151" class="box-title">Quality gate</text>
+  <text x="1020" y="177" class="box-text">Pass all checks</text>
+  <text x="1020" y="195" class="box-text">Fail on missing evidence</text>
+
+  <path d="M884 217 V260 H364" class="arrow"/>
+  <path d="M884 217 V260 H836" class="arrow"/>
+
+  <rect x="278" y="278" width="272" height="72" class="box"/>
+  <text x="300" y="307" class="box-title">GitHub job summary</text>
+  <text x="300" y="329" class="box-text">Control list, status, evidence links, test names</text>
+
+  <rect x="650" y="278" width="272" height="72" class="box"/>
+  <text x="672" y="307" class="box-title">Downloadable artifact</text>
+  <text x="672" y="329" class="box-text">Formatting, validation, tests, evidence report</text>
+</svg>
