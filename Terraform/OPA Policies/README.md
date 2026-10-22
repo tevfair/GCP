@@ -4,7 +4,8 @@ This directory centralizes OPA/Rego policies for the Terraform services in this 
 
 ## Services
 
-- `Apigee/` — plan-based security controls and unit tests for `../Apigee/`
+- `API Hub/` — plan-based security controls, control catalog, and unit tests for `../API HUB/`
+- `Apigee/` — plan-based security controls, control catalog, and unit tests for `../Apigee/`
 
 ## Run all policy tests
 
@@ -17,4 +18,4 @@ opa test "Terraform/OPA Policies" -v
 
 ## Add policies for another service
 
-Create a service-specific directory under this folder, for example `API Hub/`, and keep both its policy and `_test.rego` files there.
+Create a service-specific directory under this folder and keep its policy, `_test.rego` file, and `controls.json` evidence catalog together.

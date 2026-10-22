@@ -1,6 +1,7 @@
 # Local filesystem and sync metadata
 .DS_Store
 *.rslsc
+*.rslsd
 
 # Terraform working directories
 **/.terraform/*

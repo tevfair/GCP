@@ -8,10 +8,7 @@ import sys
 from pathlib import Path
 from urllib.parse import quote
 
-POLICY_DIR = Path("Terraform/OPA Policies/Apigee")
-CATALOG = POLICY_DIR / "controls.json"
-POLICY = POLICY_DIR / "apigee_security.rego"
-TESTS = POLICY_DIR / "apigee_security_test.rego"
+POLICY_ROOT = Path("Terraform/OPA Policies")
 RESULTS = Path("test-results.txt")
 REPORT = Path("control-evidence.md")
 
@@ -33,49 +30,85 @@ def source_link(path: Path, line: int, label: str) -> str:
 
 
 def main() -> int:
-    controls = json.loads(CATALOG.read_text())
     output = RESULTS.read_text() if RESULTS.exists() else ""
-    rows = []
+    service_reports = []
     errors = []
+    total_controls = 0
+    passed_controls = 0
 
-    for control in controls:
-        control_id = control["id"]
-        test_name = control["test"]
-        policy_line = line_for(POLICY, rf'"control":\s*"{re.escape(control_id)}"')
-        test_line = line_for(TESTS, rf"^\s*{re.escape(test_name)}\s*\{{")
-        passed = bool(re.search(rf"\.{re.escape(test_name)}:\s+PASS\b", output))
+    for catalog in sorted(POLICY_ROOT.glob("*/controls.json")):
+        service_dir = catalog.parent
+        policies = sorted(
+            path for path in service_dir.glob("*.rego") if not path.name.endswith("_test.rego")
+        )
+        tests = sorted(service_dir.glob("*_test.rego"))
+        controls = json.loads(catalog.read_text())
+        rows = []
 
-        evidence = []
-        if policy_line:
-            evidence.append(source_link(POLICY, policy_line, f"policy L{policy_line}"))
-        else:
-            errors.append(f"{control_id} has no matching policy implementation")
+        if len(policies) != 1 or len(tests) != 1:
+            errors.append(
+                f"{service_dir.name} must contain exactly one policy and one test file"
+            )
+            continue
 
-        if test_line:
-            evidence.append(source_link(TESTS, test_line, f"test L{test_line}"))
-        else:
-            errors.append(f"{control_id} maps to missing test {test_name}")
+        policy = policies[0]
+        test_file = tests[0]
+        service_passed = 0
 
-        if not passed:
-            errors.append(f"{control_id} test {test_name} did not pass")
+        for control in controls:
+            control_id = control["id"]
+            test_name = control["test"]
+            policy_line = line_for(policy, rf'"control":\s*"{re.escape(control_id)}"')
+            test_line = line_for(test_file, rf"^\s*{re.escape(test_name)}\s*\{{")
+            passed = bool(re.search(rf"\.{re.escape(test_name)}:\s+PASS\b", output))
 
-        status = "Passed" if policy_line and test_line and passed else "Failed"
-        requirement = control["requirement"].replace("|", "\\|")
-        rows.append(
-            f"| `{control_id}` | {requirement} | **{status}** | "
-            f"{', '.join(evidence) or 'Missing'} | `{test_name}` |"
+            evidence = []
+            if policy_line:
+                evidence.append(source_link(policy, policy_line, f"policy L{policy_line}"))
+            else:
+                errors.append(f"{control_id} has no matching policy implementation")
+
+            if test_line:
+                evidence.append(source_link(test_file, test_line, f"test L{test_line}"))
+            else:
+                errors.append(f"{control_id} maps to missing test {test_name}")
+
+            if not passed:
+                errors.append(f"{control_id} test {test_name} did not pass")
+
+            status = "Passed" if policy_line and test_line and passed else "Failed"
+            if status == "Passed":
+                service_passed += 1
+            requirement = control["requirement"].replace("|", "\\|")
+            rows.append(
+                f"| `{control_id}` | {requirement} | **{status}** | "
+                f"{', '.join(evidence) or 'Missing'} | `{test_name}` |"
+            )
+
+        total_controls += len(rows)
+        passed_controls += service_passed
+        service_reports.extend(
+            [
+                f"### {service_dir.name}",
+                "",
+                f"**Coverage:** {service_passed}/{len(rows)} controls passed with referenced evidence.",
+                "",
+                "| Control | Requirement | Result | Referenced evidence | Test executed |",
+                "|---|---|---|---|---|",
+                *rows,
+                "",
+            ]
         )
 
-    passed_count = sum("**Passed**" in row for row in rows)
+    if total_controls == 0:
+        errors.append("No control catalogs were found")
+
     report = [
         "## Controls tested and evidence",
         "",
-        f"**Coverage:** {passed_count}/{len(rows)} cataloged controls passed with policy and test evidence.",
+        f"**Overall coverage:** {passed_controls}/{total_controls} cataloged controls passed with policy and test evidence.",
         "",
-        "| Control | Requirement | Result | Referenced evidence | Test executed |",
-        "|---|---|---|---|---|",
-        *rows,
-        "",
+        *service_reports,
         "### Evidence context",
         "",
         f"- Commit tested: `{os.environ.get('GITHUB_SHA', 'local')}`",

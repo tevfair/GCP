@@ -1,0 +1,52 @@
+[
+  {
+    "id": "APIHUB-001",
+    "requirement": "Exactly one API Hub host registration and instance must exist.",
+    "test": "test_complete_deployment_is_required"
+  },
+  {
+    "id": "APIHUB-002",
+    "requirement": "The API Hub API must be enabled and retained during destroy.",
+    "test": "test_api_must_remain_enabled"
+  },
+  {
+    "id": "APIHUB-003",
+    "requirement": "The host registration must use a full Google Cloud project resource name.",
+    "test": "test_host_project_resource_name_is_required"
+  },
+  {
+    "id": "APIHUB-004",
+    "requirement": "The host registration and API Hub instance must use the same explicit project.",
+    "test": "test_projects_must_match"
+  },
+  {
+    "id": "APIHUB-005",
+    "requirement": "The host registration and API Hub instance must use the same explicit location.",
+    "test": "test_locations_must_match"
+  },
+  {
+    "id": "APIHUB-006",
+    "requirement": "The deployment must create exactly one API Hub service identity.",
+    "test": "test_service_identity_is_required"
+  },
+  {
+    "id": "APIHUB-007",
+    "requirement": "The API Hub service identity must receive the admin and runtime project service-agent roles.",
+    "test": "test_required_roles_are_enforced"
+  },
+  {
+    "id": "APIHUB-008",
+    "requirement": "Encryption must use explicit Google-managed encryption or a valid CMEK CryptoKey resource.",
+    "test": "test_invalid_cmek_is_rejected"
+  },
+  {
+    "id": "APIHUB-009",
+    "requirement": "Enabled semantic search must specify a Vertex AI location.",
+    "test": "test_semantic_search_requires_vertex_location"
+  },
+  {
+    "id": "APIHUB-010",
+    "requirement": "The API Hub instance ID must use a stable lowercase resource-safe format.",
+    "test": "test_instance_id_format_is_enforced"
+  }
+]
