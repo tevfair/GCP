@@ -29,8 +29,25 @@ def source_link(path: Path, line: int, label: str) -> str:
     return f"[{label}]({server}/{repository}/blob/{revision}/{encoded_path}#L{line})"
 
 
+def denial_logs(output: str) -> dict[str, dict[str, str]]:
+    records = {}
+    pattern = re.compile(r"EXPECTED_DENIAL control=(\S+) evidence=(\{.*\})")
+    for match in pattern.finditer(output):
+        control_id = match.group(1)
+        try:
+            records[control_id] = json.loads(match.group(2))
+        except json.JSONDecodeError:
+            continue
+    return records
+
+
+def markdown_text(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ")
+
+
 def main() -> int:
     output = RESULTS.read_text() if RESULTS.exists() else ""
+    observed_denials = denial_logs(output)
     service_reports = []
     errors = []
     total_controls = 0
@@ -61,6 +78,7 @@ def main() -> int:
             policy_line = line_for(policy, rf'"control":\s*"{re.escape(control_id)}"')
             test_line = line_for(test_file, rf"^\s*{re.escape(test_name)}\s*\{{")
             passed = bool(re.search(rf"\.{re.escape(test_name)}:\s+PASS\b", output))
+            denial = observed_denials.get(control_id)
 
             evidence = []
             if policy_line:
@@ -75,14 +93,22 @@ def main() -> int:
 
             if not passed:
                 errors.append(f"{control_id} test {test_name} did not pass")
+            if not denial:
+                errors.append(f"{control_id} has no observed EXPECTED_DENIAL in OPA logs")
 
-            status = "Passed" if policy_line and test_line and passed else "Failed"
+            status = "Passed" if policy_line and test_line and passed and denial else "Failed"
             if status == "Passed":
                 service_passed += 1
-            requirement = control["requirement"].replace("|", "\\|")
+            requirement = markdown_text(control["requirement"])
+            if denial:
+                address = markdown_text(denial.get("address", "n/a"))
+                message = markdown_text(denial.get("message", "Missing denial message"))
+                observed = f"`{address}`<br>{message}"
+            else:
+                observed = "**Missing from OPA log**"
             rows.append(
                 f"| `{control_id}` | {requirement} | **{status}** | "
-                f"{', '.join(evidence) or 'Missing'} | `{test_name}` |"
+                f"{observed} | {', '.join(evidence) or 'Missing'} | `{test_name}` |"
             )
 
         total_controls += len(rows)
@@ -93,8 +119,8 @@ def main() -> int:
                 "",
                 f"**Coverage:** {service_passed}/{len(rows)} controls passed with referenced evidence.",
                 "",
-                "| Control | Requirement | Result | Referenced evidence | Test executed |",
-                "|---|---|---|---|---|",
+                "| Control | Requirement | Result | Observed OPA denial | Source evidence | Test executed |",
+                "|---|---|---|---|---|---|",
                 *rows,
                 "",
             ]
@@ -114,7 +140,9 @@ def main() -> int:
         f"- Commit tested: `{os.environ.get('GITHUB_SHA', 'local')}`",
         f"- OPA version: `{os.environ.get('OPA_VERSION', 'unknown')}`",
         "- Evidence links are pinned to the exact commit tested by this workflow.",
-        "- A control passes only when its implementation exists, its mapped unit test exists, and that test reports `PASS`.",
+        "- `Passed` means the negative fixture produced the displayed denial and the OPA assertion passed.",
+        "- The displayed denials are parsed directly from OPA's `EXPECTED_DENIAL` test logs, not inferred by the report generator.",
+        "- The valid fixture separately logs `VALID_PLAN ... denials=0`.",
     ]
 
     if errors:

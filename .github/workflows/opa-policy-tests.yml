@@ -60,14 +60,25 @@ jobs:
         run: |
           set +e
 
-          opa fmt --fail "$POLICY_DIR" > format-results.txt 2>&1
-          format_status=$?
+          mapfile -d '' rego_files < <(find "$POLICY_DIR" -type f -name '*.rego' -print0)
+          if [[ ${#rego_files[@]} -eq 0 ]]; then
+            echo "No Rego files found under $POLICY_DIR" | tee format-results.txt check-results.txt test-results.txt
+            format_status=1
+            check_status=1
+            test_status=1
+          else
+            opa fmt --fail "${rego_files[@]}" > format-results.txt 2>&1
+            format_status=$?
 
-          opa check --strict "$POLICY_DIR" > check-results.txt 2>&1
-          check_status=$?
+            opa check --strict "${rego_files[@]}" > check-results.txt 2>&1
+            check_status=$?
 
-          opa test "$POLICY_DIR" --verbose > test-results.txt 2>&1
-          test_status=$?
+            opa test "${rego_files[@]}" --verbose > test-results.txt 2>&1
+            test_status=$?
+          fi
+
+          grep 'EXPECTED_DENIAL' test-results.txt > expected-denials.log || true
+          grep 'VALID_PLAN' test-results.txt > valid-plan-results.log || true
 
           {
             echo "OPA version: ${OPA_VERSION}"
@@ -80,9 +91,15 @@ jobs:
             cat check-results.txt
             echo "Exit code: ${check_status}"
             echo
-            echo "=== Unit tests ==="
+            echo "=== Unit tests and transparent denial logs ==="
             cat test-results.txt
             echo "Exit code: ${test_status}"
+            echo
+            echo "=== Expected negative-fixture denials ==="
+            cat expected-denials.log
+            echo
+            echo "=== Valid fixtures ==="
+            cat valid-plan-results.log
           } | tee opa-results.txt
 
           echo "format_status=${format_status}" >> "$GITHUB_OUTPUT"
@@ -125,6 +142,8 @@ jobs:
               echo "| Unit tests | Failed |"
             fi
             echo
+            echo "> **Interpretation:** Observed denials below are expected results from intentionally noncompliant test fixtures. They demonstrate that each policy rejects a bad configuration; they are not violations from a live Terraform plan."
+            echo
             cat control-evidence.md
             echo
             echo "<details><summary>Complete OPA output</summary>"
@@ -145,6 +164,8 @@ jobs:
             format-results.txt
             check-results.txt
             test-results.txt
+            expected-denials.log
+            valid-plan-results.log
             control-evidence.md
           if-no-files-found: error
           retention-days: 14

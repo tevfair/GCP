@@ -47,11 +47,13 @@ project_service(address, service) := managed_resource(address, "google_project_s
 control_present(violations, control) {
 	some violation in violations
 	violation.control == control
+	print(sprintf("EXPECTED_DENIAL control=%s evidence=%s", [control, json.marshal(violation)]))
 }
 
 test_secure_plan_has_no_denials {
 	violations := deny with input as valid_plan
 	count(violations) == 0
+	print("VALID_PLAN service=Apigee denials=0")
 }
 
 test_empty_plan_is_rejected {

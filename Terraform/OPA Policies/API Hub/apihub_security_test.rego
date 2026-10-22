@@ -48,6 +48,7 @@ managed_resource(address, resource_type, after) := {
 control_present(violations, control) {
 	some violation in violations
 	violation.control == control
+	print(sprintf("EXPECTED_DENIAL control=%s evidence=%s", [control, json.marshal(violation)]))
 }
 
 replace_resource(plan, index, replacement) := object.union(plan, {"resource_changes": array.concat(
@@ -58,6 +59,7 @@ replace_resource(plan, index, replacement) := object.union(plan, {"resource_chan
 test_secure_plan_has_no_denials {
 	violations := deny with input as valid_plan
 	count(violations) == 0
+	print("VALID_PLAN service=API Hub denials=0")
 }
 
 test_complete_deployment_is_required {
