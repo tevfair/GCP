@@ -1,0 +1,13 @@
+project_id          = "example-project-id"
+location            = "us-central1"
+api_hub_instance_id = "api-hub"
+description         = "Organization API catalog managed by Terraform"
+
+# Semantic search is optional. When enabled, select the appropriate supported
+# Vertex AI multi-region for your data-residency requirements.
+enable_semantic_search = false
+# vertex_location      = "us"
+
+# Optional keyless deployment identity. The caller requires
+# roles/iam.serviceAccountTokenCreator on this service account.
+# impersonate_service_account = "terraform-api-hub@example-project-id.iam.gserviceaccount.com"
