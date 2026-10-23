@@ -1,7 +1,7 @@
 # Local filesystem and sync metadata
 .DS_Store
 *.rslsc
-*.rslsd
+*.rsls*
 __pycache__/
 *.py[cod]
 
