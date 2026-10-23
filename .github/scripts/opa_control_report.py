@@ -79,6 +79,12 @@ def main() -> int:
             test_line = line_for(test_file, rf"^\s*{re.escape(test_name)}\s*\{{")
             passed = bool(re.search(rf"\.{re.escape(test_name)}:\s+PASS\b", output))
             denial = observed_denials.get(control_id)
+            fixture = control.get("fixture")
+            terraform_path = Path(control.get("terraform_path", ""))
+            terraform_pattern = control.get("terraform_pattern")
+            terraform_line = None
+            if terraform_path.is_file() and terraform_pattern:
+                terraform_line = line_for(terraform_path, re.escape(terraform_pattern))
 
             evidence = []
             if policy_line:
@@ -95,8 +101,16 @@ def main() -> int:
                 errors.append(f"{control_id} test {test_name} did not pass")
             if not denial:
                 errors.append(f"{control_id} has no observed EXPECTED_DENIAL in OPA logs")
+            if not fixture:
+                errors.append(f"{control_id} has no fixture description")
+            if not terraform_line:
+                errors.append(f"{control_id} has no valid related Terraform reference")
 
-            status = "Passed" if policy_line and test_line and passed and denial else "Failed"
+            status = (
+                "Passed"
+                if policy_line and test_line and passed and denial and fixture and terraform_line
+                else "Failed"
+            )
             if status == "Passed":
                 service_passed += 1
             requirement = markdown_text(control["requirement"])
@@ -106,9 +120,25 @@ def main() -> int:
                 observed = f"`{address}`<br>{message}"
             else:
                 observed = "**Missing from OPA log**"
+            fixture_text = markdown_text(fixture or "Missing fixture description")
+            terraform_reference = (
+                source_link(terraform_path, terraform_line, f"related Terraform L{terraform_line}")
+                if terraform_line
+                else "Missing Terraform reference"
+            )
+            fixture_reference = (
+                source_link(test_file, test_line, "fixture code")
+                if test_line
+                else "Missing fixture code"
+            )
+            test_executed = (
+                f"**Bad fixture:** {fixture_text}<br>"
+                f"**OPA test:** `{test_name}` ({fixture_reference})<br>"
+                f"**Production configuration:** {terraform_reference}"
+            )
             rows.append(
                 f"| `{control_id}` | {requirement} | **{status}** | "
-                f"{observed} | {', '.join(evidence) or 'Missing'} | `{test_name}` |"
+                f"{observed} | {', '.join(evidence) or 'Missing'} | {test_executed} |"
             )
 
         total_controls += len(rows)
@@ -140,6 +170,8 @@ def main() -> int:
         f"- Commit tested: `{os.environ.get('GITHUB_SHA', 'local')}`",
         f"- OPA version: `{os.environ.get('OPA_VERSION', 'unknown')}`",
         "- Evidence links are pinned to the exact commit tested by this workflow.",
+        "- `Test executed` identifies the deliberately bad Terraform-plan fixture, the Rego test function, and the related production `.tf` setting.",
+        "- Unit tests construct synthetic Terraform plan JSON; they do not execute the production `.tf` file. The production link shows the setting that the fixture models.",
         "- `Passed` means the negative fixture produced the displayed denial and the OPA assertion passed.",
         "- The displayed denials are parsed directly from OPA's `EXPECTED_DENIAL` test logs, not inferred by the report generator.",
         "- The valid fixture separately logs `VALID_PLAN ... denials=0`.",

@@ -2,51 +2,81 @@
   {
     "id": "APIHUB-001",
     "requirement": "Exactly one API Hub host registration and instance must exist.",
-    "test": "test_complete_deployment_is_required"
+    "test": "test_complete_deployment_is_required",
+    "fixture": "Uses an empty Terraform plan with no host registration or API Hub instance; expects APIHUB-001 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "resource \"google_apihub_host_project_registration\""
   },
   {
     "id": "APIHUB-002",
     "requirement": "The API Hub API must be enabled and retained during destroy.",
-    "test": "test_api_must_remain_enabled"
+    "test": "test_api_must_remain_enabled",
+    "fixture": "Sets google_project_service.apihub.disable_on_destroy to true; expects APIHUB-002 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "resource \"google_project_service\" \"apihub\""
   },
   {
     "id": "APIHUB-003",
     "requirement": "The host registration must use a full Google Cloud project resource name.",
-    "test": "test_host_project_resource_name_is_required"
+    "test": "test_host_project_resource_name_is_required",
+    "fixture": "Sets gcp_project to example-project instead of projects/example-project; expects APIHUB-003 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "gcp_project"
   },
   {
     "id": "APIHUB-004",
     "requirement": "The host registration and API Hub instance must use the same explicit project.",
-    "test": "test_projects_must_match"
+    "test": "test_projects_must_match",
+    "fixture": "Sets the API Hub instance project to different-project while the host uses example-project; expects APIHUB-004 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "resource \"google_apihub_api_hub_instance\""
   },
   {
     "id": "APIHUB-005",
     "requirement": "The host registration and API Hub instance must use the same explicit location.",
-    "test": "test_locations_must_match"
+    "test": "test_locations_must_match",
+    "fixture": "Sets the instance location to europe-west1 while the host uses us-central1; expects APIHUB-005 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "location            = var.location"
   },
   {
     "id": "APIHUB-006",
     "requirement": "The deployment must create exactly one API Hub service identity.",
-    "test": "test_service_identity_is_required"
+    "test": "test_service_identity_is_required",
+    "fixture": "Removes google_project_service_identity.apihub from the plan; expects APIHUB-006 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "resource \"google_project_service_identity\""
   },
   {
     "id": "APIHUB-007",
     "requirement": "The API Hub service identity must receive the admin and runtime project service-agent roles.",
-    "test": "test_required_roles_are_enforced"
+    "test": "test_required_roles_are_enforced",
+    "fixture": "Removes roles/apihub.runtimeProjectServiceAgent from the plan; expects APIHUB-007 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "roles/apihub.admin"
   },
   {
     "id": "APIHUB-008",
     "requirement": "Encryption must use explicit Google-managed encryption or a valid CMEK CryptoKey resource.",
-    "test": "test_invalid_cmek_is_rejected"
+    "test": "test_invalid_cmek_is_rejected",
+    "fixture": "Sets encryption_type to CMEK with cmek_key_name=invalid-key; expects APIHUB-008 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "encryption_type"
   },
   {
     "id": "APIHUB-009",
     "requirement": "Enabled semantic search must specify a Vertex AI location.",
-    "test": "test_semantic_search_requires_vertex_location"
+    "test": "test_semantic_search_requires_vertex_location",
+    "fixture": "Enables semantic search with disable_search=false and vertex_location=null; expects APIHUB-009 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "disable_search"
   },
   {
     "id": "APIHUB-010",
     "requirement": "The API Hub instance ID must use a stable lowercase resource-safe format.",
-    "test": "test_instance_id_format_is_enforced"
+    "test": "test_instance_id_format_is_enforced",
+    "fixture": "Sets api_hub_instance_id to INVALID_ID; expects APIHUB-010 denial.",
+    "terraform_path": "Terraform/API HUB/main.tf",
+    "terraform_pattern": "api_hub_instance_id = var.api_hub_instance_id"
   }
 ]
