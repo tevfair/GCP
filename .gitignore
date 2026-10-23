@@ -2,6 +2,8 @@
 .DS_Store
 *.rslsc
 *.rslsd
+__pycache__/
+*.py[cod]
 
 # Terraform working directories
 **/.terraform/*

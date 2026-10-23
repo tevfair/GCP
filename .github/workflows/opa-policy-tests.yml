@@ -7,16 +7,18 @@ on:
     paths:
       - "Terraform/**"
       - ".github/scripts/opa_control_report.py"
+      - ".github/scripts/update_readme_results.py"
       - ".github/workflows/opa-policy-tests.yml"
   pull_request:
     paths:
       - "Terraform/**"
       - ".github/scripts/opa_control_report.py"
+      - ".github/scripts/update_readme_results.py"
       - ".github/workflows/opa-policy-tests.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: opa-policy-tests-${{ github.workflow }}-${{ github.ref }}
@@ -169,6 +171,28 @@ jobs:
             control-evidence.md
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish passing results to README
+        if: >-
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          steps.opa.outputs.format_status == '0' &&
+          steps.opa.outputs.check_status == '0' &&
+          steps.opa.outputs.test_status == '0' &&
+          steps.evidence.outputs.status == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/update_readme_results.py
+          if git diff --quiet -- README.md; then
+            echo "README already contains the latest results."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: publish latest OPA control results [skip ci]"
+          git push
 
       - name: Fail workflow when a check fails
         if: >-
